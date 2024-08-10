@@ -6,6 +6,12 @@ from email.utils import formataddr
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+from flask import Flask, request, render_template
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
+
 
 def otpToken() -> int:
     otp = secrets.randbelow(9999999)
@@ -20,34 +26,28 @@ def otpToken() -> int:
     return otp
 
 
-def sendEmail(receiver_email: str, sender_email: str, sender_email_password: str):
+@app.route("/api/send_otp", methods=["POST"])
+def sendEmail():
     try:
-        if receiver_email and sender_email and sender_email_password:
+
+        if request.method == "POST":
             otp: int = otpToken()
+            request_data = request.get_json()
+
+            sender = request_data["sender"]
+            password = request_data["password"]
+            receipient = request_data["recipient"]
+            custom_name = request_data["custom_name"]
 
             email_message = MIMEMultipart()
-<<<<<<< HEAD
-            #  change AppName to whatever you like
-            email_message["From"] = formataddr((str(Header("AppName", "utf-8")), request_data["sender_email"]))
-            email_message["To"] = request_data["receiver_email"]
-=======
-            email_message["From"] = formataddr((str(Header("AppName", "utf-8")), sender_email))
-            email_message["To"] = receiver_email
->>>>>>> d034c80033a95e06baacdb55ab57fa012eb35c6a
+            email_message["From"] = formataddr((str(Header(custom_name, "utf-8")), sender))
             email_message["Subject"] = "Email Verification"
+            email_message["To"] = receipient
 
-            body1 = MIMEText(
-                """<center><div style="width: auto;"><table role="presentation" width="100%" border="0" style="padding: 10px; border-collapse: collapse;"><tr><td style="text-align: center;"><div style="font-family: Helvetica, Arial, sans-serif; width: auto; overflow: hidden; line-height: 2;"><div style="margin: 0 auto; width: auto; padding: 10px; border-bottom: 1px solid #ddd; display: inline-block;"><p style="margin: 0; font-size: 16px">""",
-                "html",
-                "utf-8",
-            )
-            body2 = MIMEText(str(otp), "plain")
-            body3 = MIMEText("""</p></div></div></td></tr></table></div></center>""", "html", "utf-8")
+            html_content = render_template("email.html", otp=otp)
+            body = MIMEText(html_content, "html", "utf-8")
 
-            email_message.attach(body1)
-            email_message.attach(body2)
-            email_message.attach(body3)
-
+            email_message.attach(body)
             context = ssl.create_default_context()
 
             try:
@@ -55,23 +55,15 @@ def sendEmail(receiver_email: str, sender_email: str, sender_email_password: str
                     server.ehlo()
                     server.starttls(context=context)
                     server.ehlo()
-                    server.login(sender_email, sender_email_password)
-                    server.sendmail(sender_email, receiver_email, email_message.as_string())
+                    server.login(sender, password)
+                    server.sendmail(sender, receipient, email_message.as_string())
 
-<<<<<<< HEAD
-                    return {"message": "sent", "otp": str(otp), "to": request_data["receiver_email"]}, 200
+                    return {"message": "sent", "otp": str(otp), "to": receipient}, 200
             except Exception as error:
                 return {"message": "failed", "error": str(error)}, 422
     except Exception as error:
         return {"message": "failed", "error": str(error)}, 500
-=======
-                    return {"message": "sent", "otp": str(otp), "to": receiver_email}
-            except Exception as error:
-                return {"message": "failed", "error": str(error)}
-    except Exception as error:
-        return {"message": "failed", "error": str(error)}
->>>>>>> d034c80033a95e06baacdb55ab57fa012eb35c6a
 
 
 if __name__ == "__main__":
-    print(sendEmail("""receiver_email""", """sender_email""", """sender_email_password"""))
+    app.run(debug=True)
