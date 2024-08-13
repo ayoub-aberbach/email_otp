@@ -29,14 +29,13 @@ def otpToken() -> int:
 @app.route("/api/send_otp", methods=["POST"])
 def sendEmail():
     try:
-
+        request_data = request.get_json()
         if request.method == "POST":
             otp: int = otpToken()
-            request_data = request.get_json()
 
             sender = request_data["sender"]
             password = request_data["password"]
-            receipient = request_data["recipient"]
+            receipient = request_data["receipient"]
             custom_name = request_data["custom_name"]
 
             email_message = MIMEMultipart()
