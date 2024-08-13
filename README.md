@@ -5,6 +5,7 @@
 
 #2:
 
-    # sender_email => your email
-    # receiver_email => target email
-    # sender_email_password => your email password
+    # sender => your email
+    # password => your email password
+    # receipient => target email
+    # custom_name => Email sender name or title
